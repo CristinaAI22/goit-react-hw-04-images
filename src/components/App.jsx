@@ -1,94 +1,84 @@
-import Modal from './Modal';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import React, { Component } from 'react';
 import Searchbar from './Searchbar';
 import ImageGallery from './ImageGallery';
 import Button from './Button';
 import Loader from './Loader';
+import Modal from './Modal';
 import Notiflix from 'notiflix';
 
 const API_KEY = '37150177-120515d24bc5803fc768400f4';
 const BASE_URL = 'https://pixabay.com/api/';
 
-class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    page: 1,
-    isLoading: false,
-    modalOpen: false,
-    selectedImage: '',
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState('');
+
+  useEffect(() => {
+    const fetchImages = () => {
+      const url = `${BASE_URL}?q=${query}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`;
+
+      setIsLoading(true);
+      Notiflix.Loading.standard('Loading...');
+
+      axios
+        .get(url)
+        .then(response => {
+          const newImages = response.data.hits.map(image => ({
+            id: image.id,
+            webformatURL: image.webformatURL,
+            largeImageURL: image.largeImageURL,
+          }));
+
+          setImages(prevImages => [...prevImages, ...newImages]);
+        })
+        .catch(error => {
+          Notiflix.Notify.failure('Error fetching images:', error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+          Notiflix.Loading.remove();
+        });
+    };
+
+    if (query) {
+      fetchImages();
+    }
+  }, [query, page]);
+
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  handleSubmit = query => {
-    this.setState({ query, images: [], page: 1 }, this.fetchImages);
-  };
-  fetchImages = () => {
-    const { query, page } = this.state;
-    const url = `${BASE_URL}?q=${query}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`;
-
-    this.setState({ isLoading: true });
-
-    Notiflix.Loading.standard('Loading...');
-
-    axios
-      .get(url)
-      .then(response => {
-        const newImages = response.data.hits.map(image => ({
-          id: image.id,
-          webformatURL: image.webformatURL,
-          largeImageURL: image.largeImageURL,
-        }));
-
-        this.setState(prevState => ({
-          images: [...prevState.images, ...newImages],
-        }));
-      })
-      .catch(error => {
-        console.error('Error fetching images:', error);
-      })
-      .finally(() => {
-        this.setState({ isLoading: false });
-        Notiflix.Loading.remove();
-      });
+  const handleImageClick = imageUrl => {
+    setModalOpen(true);
+    setSelectedImage(imageUrl);
   };
 
-  handleLoadMore = () => {
-    this.setState(
-      prevState => ({ page: prevState.page + 1 }),
-      this.fetchImages
-    );
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedImage('');
   };
 
-  handleImageClick = imageUrl => {
-    this.setState({ modalOpen: true, selectedImage: imageUrl });
-  };
-
-  handleCloseModal = () => {
-    this.setState({ modalOpen: false, selectedImage: '' });
-  };
-
-  render() {
-    const { images, modalOpen, selectedImage, isLoading } = this.state;
-
-    return (
-      <div className="App">
-        <Searchbar onSubmit={this.handleSubmit} />
-        <ImageGallery images={images} onItemClick={this.handleImageClick} />
-        {images.length > 0 && !isLoading && (
-          <Button onClick={this.handleLoadMore} />
-        )}
-        {isLoading && <Loader />}
-        {modalOpen && (
-          <Modal
-            isOpen={modalOpen}
-            imageUrl={selectedImage}
-            onClose={this.handleCloseModal}
-          />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div className="App">
+      <Searchbar onSubmit={setQuery} />
+      <ImageGallery images={images} onItemClick={handleImageClick} />
+      {images.length > 0 && !isLoading && <Button onClick={handleLoadMore} />}
+      {isLoading && <Loader />}
+      {modalOpen && (
+        <Modal
+          isOpen={modalOpen}
+          imageUrl={selectedImage}
+          onClose={handleCloseModal}
+        />
+      )}
+    </div>
+  );
+};
 
 export default App;

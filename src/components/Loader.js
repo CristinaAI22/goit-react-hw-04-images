@@ -1,13 +1,12 @@
-import React from 'react';
+import { useEffect } from 'react';
 import Notiflix from 'notiflix';
 
-class Loader extends React.Component {
-  componentDidMount() {
+export const Loader = () => {
+  useEffect(() => {
     Notiflix.Loading.standard('Loading...');
-  }
-  render() {
-    return null;
-  }
-}
+  }, []);
+
+  return null;
+};
 
 export default Loader;
