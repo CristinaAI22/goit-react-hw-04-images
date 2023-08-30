@@ -63,10 +63,15 @@ export const App = () => {
     setModalOpen(false);
     setSelectedImage('');
   };
+  const handleSubmit = newQuery => {
+    setQuery(newQuery);
+    setPage(1); // Reset page to 1 for a new search
+    setImages([]);
+  };
 
   return (
     <div className="App">
-      <Searchbar onSubmit={setQuery} />
+      <Searchbar onSubmit={handleSubmit} />
       <ImageGallery images={images} onItemClick={handleImageClick} />
       {images.length > 0 && !isLoading && <Button onClick={handleLoadMore} />}
       {isLoading && <Loader />}
